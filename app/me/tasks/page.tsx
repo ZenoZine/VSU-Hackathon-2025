@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
-import { useCurrentUserProfile } from '@/lib/useCurrentUserProfile';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+import { useCurrentUserProfile } from "@/lib/useCurrentUserProfile";
 
 type Task = {
   id: string;
@@ -21,18 +21,18 @@ type Status = { id: string; name: string };
 function statusPillClasses(name?: string) {
   const n = name?.toLowerCase();
   if (!n) {
-    return 'inline-flex items-center rounded-full bg-slate-700 px-2.5 py-0.5 text-[11px] font-medium text-slate-100';
+    return "inline-flex items-center rounded-full bg-slate-700 px-2.5 py-0.5 text-[11px] font-medium text-slate-100";
   }
-  if (n.includes('open')) {
-    return 'inline-flex items-center rounded-full bg-slate-900 border border-amber-500/40 px-2.5 py-0.5 text-[11px] font-medium text-amber-300';
+  if (n.includes("open")) {
+    return "inline-flex items-center rounded-full bg-slate-900 border border-amber-500/40 px-2.5 py-0.5 text-[11px] font-medium text-amber-300";
   }
-  if (n.includes('progress')) {
-    return 'inline-flex items-center rounded-full bg-slate-900 border border-blue-500/40 px-2.5 py-0.5 text-[11px] font-medium text-blue-300';
+  if (n.includes("progress")) {
+    return "inline-flex items-center rounded-full bg-slate-900 border border-blue-500/40 px-2.5 py-0.5 text-[11px] font-medium text-blue-300";
   }
-  if (n.includes('complete') || n.includes('done')) {
-    return 'inline-flex items-center rounded-full bg-slate-900 border border-emerald-500/40 px-2.5 py-0.5 text-[11px] font-medium text-emerald-300';
+  if (n.includes("complete") || n.includes("done")) {
+    return "inline-flex items-center rounded-full bg-slate-900 border border-emerald-500/40 px-2.5 py-0.5 text-[11px] font-medium text-emerald-300";
   }
-  return 'inline-flex items-center rounded-full bg-slate-900 border border-slate-500/40 px-2.5 py-0.5 text-[11px] font-medium text-slate-100';
+  return "inline-flex items-center rounded-full bg-slate-900 border border-slate-500/40 px-2.5 py-0.5 text-[11px] font-medium text-slate-100";
 }
 
 export default function MyTasksPage() {
@@ -47,16 +47,16 @@ export default function MyTasksPage() {
     const loadData = async () => {
       // guard: must be logged in
       if (!profile) {
-        router.replace('/login');
+        router.replace("/login");
         setLoading(false);
         return;
       }
 
       // 1. Load statuses
       const { data: statusData } = await supabase
-        .from('task_statuses')
-        .select('id, name')
-        .order('sort_order');
+        .from("task_statuses")
+        .select("id, name")
+        .order("sort_order");
 
       if (statusData) {
         setStatuses(statusData);
@@ -64,17 +64,15 @@ export default function MyTasksPage() {
 
       // 2. Get groups this user belongs to
       const { data: memberships } = await supabase
-        .from('user_groups')
-        .select('group_id')
-        .eq('user_id', profile.id);
+        .from("user_groups")
+        .select("group_id")
+        .eq("user_id", profile.id);
 
       const groupIds = memberships?.map((m) => m.group_id) ?? [];
 
       // 3. Load tasks assigned to this user OR these groups
-      let query = supabase
-        .from('tasks')
-        .select(
-          `
+      let query = supabase.from("tasks").select(
+        `
           id,
           title,
           description,
@@ -84,20 +82,22 @@ export default function MyTasksPage() {
           task_statuses ( name ),
           groups ( name )
         `
-        );
+      );
 
       if (groupIds.length > 0) {
         query = query.or(
-          `assignee_user_id.eq.${profile.id},assignee_group_id.in.(${groupIds.join(',')})`
+          `assignee_user_id.eq.${
+            profile.id
+          },assignee_group_id.in.(${groupIds.join(",")})`
         );
       } else {
-        query = query.eq('assignee_user_id', profile.id);
+        query = query.eq("assignee_user_id", profile.id);
       }
 
       const { data: taskData, error } = await query;
 
       if (error) {
-        console.error('Error loading tasks', error);
+        console.error("Error loading tasks", error);
       } else if (taskData) {
         const mapped = taskData.map((t: any) => ({
           id: t.id,
@@ -106,9 +106,7 @@ export default function MyTasksPage() {
           status_id: t.status_id,
           assignee_group_id: t.assignee_group_id,
           due_date: t.due_date,
-          status: t.task_statuses
-            ? { name: t.task_statuses.name }
-            : undefined,
+          status: t.task_statuses ? { name: t.task_statuses.name } : undefined,
           group: t.groups ? { name: t.groups.name } : undefined,
         }));
         setTasks(mapped);
@@ -124,22 +122,20 @@ export default function MyTasksPage() {
 
   const handleStatusChange = async (taskId: string, newStatusId: string) => {
     const { error } = await supabase
-      .from('tasks')
+      .from("tasks")
       .update({
         status_id: newStatusId,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', taskId);
+      .eq("id", taskId);
 
     if (error) {
-      console.error('Error updating status', error);
+      console.error("Error updating status", error);
       return;
     }
 
     setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId ? { ...t, status_id: newStatusId } : t
-      )
+      prev.map((t) => (t.id === taskId ? { ...t, status_id: newStatusId } : t))
     );
   };
 
@@ -155,7 +151,7 @@ export default function MyTasksPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 flex items-center">
       <div className="mx-auto w-full max-w-4xl px-6 py-10">
-        <header className="mb-6 flex items-center justify-between gap-4">
+        <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-wide text-slate-400">
               Staff dashboard
@@ -164,19 +160,33 @@ export default function MyTasksPage() {
               Today&apos;s queue
             </h1>
             <p className="text-sm text-slate-300">
-              What your team is working on right now. Logged in as{' '}
+              What your team is working on right now. Logged in as{" "}
               <span className="font-semibold">
-                {profile?.full_name || 'User'}
+                {profile?.full_name || "User"}
               </span>
               .
             </p>
           </div>
-          <a
-            href="/admin/tasks"
-            className="hidden sm:inline-flex items-center rounded-full bg-slate-900/80 px-3 py-1 text-[11px] font-medium text-blue-200 border border-slate-700 hover:border-blue-400 hover:text-blue-100 transition"
-          >
-            Admin view
-          </a>
+
+          <div className="flex gap-2">
+            {/* Only show Admin view if they're actually an admin */}
+            {profile?.role === "admin" && (
+              <a
+                href="/admin/tasks"
+                className="inline-flex items-center rounded-full bg-slate-900/80 px-3 py-1 text-[11px] font-medium text-blue-200 border border-slate-700 hover:border-blue-400 hover:text-blue-100 transition"
+              >
+                Admin view
+              </a>
+            )}
+
+            {/* Logout button for all staff/admin */}
+            <a
+              href="/logout"
+              className="inline-flex items-center rounded-full bg-slate-900/80 px-3 py-1 text-[11px] font-medium text-red-200 border border-red-500/50 hover:bg-red-600/20 hover:border-red-400 transition"
+            >
+              Logout
+            </a>
+          </div>
         </header>
 
         <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl shadow-slate-950/60">
@@ -205,9 +215,7 @@ export default function MyTasksPage() {
                 <div
                   key={task.id}
                   className={`flex items-center justify-between rounded-2xl px-4 py-3 ${
-                    index === 0
-                      ? 'bg-slate-900/90'
-                      : 'bg-slate-900/70'
+                    index === 0 ? "bg-slate-900/90" : "bg-slate-900/70"
                   } border border-slate-800/70`}
                 >
                   <div className="space-y-0.5">
@@ -216,32 +224,28 @@ export default function MyTasksPage() {
                     </p>
                     <p className="text-[11px] text-slate-400">
                       {task.group ? (
-                        <>
-                          {task.group.name} ·{' '}
-                        </>
+                        <>{task.group.name} · </>
                       ) : (
-                        'Assigned to you · '
+                        "Assigned to you · "
                       )}
                       {task.description
                         ? task.description
                         : task.due_date
-                        ? `Due ${new Date(
-                            task.due_date
-                          ).toLocaleDateString()}`
-                        : 'No additional details'}
+                        ? `Due ${new Date(task.due_date).toLocaleDateString()}`
+                        : "No additional details"}
                     </p>
                   </div>
 
                   <div className="flex flex-col items-end gap-1">
                     {/* Nice status pill */}
                     <span className={statusPillClasses(task.status?.name)}>
-                      {task.status?.name ?? 'No status'}
+                      {task.status?.name ?? "No status"}
                     </span>
 
                     {/* Subtle inline status changer */}
                     <select
                       className="mt-1 border border-slate-700 bg-slate-900 text-[11px] text-slate-100 rounded-full px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      value={task.status_id ?? ''}
+                      value={task.status_id ?? ""}
                       onChange={(e) =>
                         handleStatusChange(task.id, e.target.value)
                       }

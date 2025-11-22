@@ -1,13 +1,35 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
-import { useCurrentUserProfile } from '@/lib/useCurrentUserProfile';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+import { useCurrentUserProfile } from "@/lib/useCurrentUserProfile";
 
 type Group = { id: string; name: string };
 type User = { id: string; full_name: string | null; role: string };
 type Membership = { user_id: string; group_id: string };
+
+function getInitials(name?: string | null) {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function avatarClasses(seed?: string | null) {
+  const palette = [
+    "bg-blue-600",
+    "bg-emerald-600",
+    "bg-purple-600",
+    "bg-amber-600",
+    "bg-pink-600",
+  ];
+  const index =
+    seed && seed.length > 0 ? seed.charCodeAt(0) % palette.length : 0;
+  return `inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white ${palette[index]}`;
+}
 
 export default function AdminGroupsPage() {
   const { profile, loading: profileLoading } = useCurrentUserProfile();
@@ -18,33 +40,36 @@ export default function AdminGroupsPage() {
   const [memberships, setMemberships] = useState<Membership[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [newGroupName, setNewGroupName] = useState('');
-  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [newGroupName, setNewGroupName] = useState("");
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [saving, setSaving] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState("");
 
   // load data + protect route
   useEffect(() => {
     if (profileLoading) return;
 
     if (!profile) {
-      router.replace('/login');
+      router.replace("/login");
       return;
     }
 
-    if (profile.role !== 'admin') {
-      router.replace('/me/tasks');
+    if (profile.role !== "admin") {
+      router.replace("/me/tasks");
       return;
     }
 
     const load = async () => {
-      const [{ data: groupData }, { data: userData }, { data: membershipData }] =
-        await Promise.all([
-          supabase.from('groups').select('id, name').order('name'),
-          supabase.from('profiles').select('id, full_name, role'),
-          supabase.from('user_groups').select('user_id, group_id'),
-        ]);
+      const [
+        { data: groupData },
+        { data: userData },
+        { data: membershipData },
+      ] = await Promise.all([
+        supabase.from("groups").select("id, name").order("name"),
+        supabase.from("profiles").select("id, full_name, role"),
+        supabase.from("user_groups").select("user_id, group_id"),
+      ]);
 
       if (groupData) setGroups(groupData);
       if (userData) setUsers(userData);
@@ -58,31 +83,31 @@ export default function AdminGroupsPage() {
 
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
+    setErrorMsg("");
 
     if (!newGroupName.trim()) {
-      setErrorMsg('Group name is required.');
+      setErrorMsg("Group name is required.");
       return;
     }
 
     setSaving(true);
 
     const { data, error } = await supabase
-      .from('groups')
+      .from("groups")
       .insert({ name: newGroupName.trim() })
-      .select('id, name')
+      .select("id, name")
       .single();
 
     if (error) {
-      console.error('Error creating group', error);
-      setErrorMsg('Failed to create group.');
+      console.error("Error creating group", error);
+      setErrorMsg("Failed to create group.");
       setSaving(false);
       return;
     }
 
     if (data) {
       setGroups((prev) => [...prev, data]);
-      setNewGroupName('');
+      setNewGroupName("");
     }
 
     setSaving(false);
@@ -90,10 +115,10 @@ export default function AdminGroupsPage() {
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
+    setErrorMsg("");
 
     if (!selectedGroupId || !selectedUserId) {
-      setErrorMsg('Select both a group and a user.');
+      setErrorMsg("Select both a group and a user.");
       return;
     }
 
@@ -101,19 +126,19 @@ export default function AdminGroupsPage() {
       (m) => m.group_id === selectedGroupId && m.user_id === selectedUserId
     );
     if (alreadyMember) {
-      setErrorMsg('User is already in this group.');
+      setErrorMsg("User is already in this group.");
       return;
     }
 
     setSaving(true);
 
     const { error } = await supabase
-      .from('user_groups')
+      .from("user_groups")
       .insert({ group_id: selectedGroupId, user_id: selectedUserId });
 
     if (error) {
-      console.error('Error adding member', error);
-      setErrorMsg('Failed to add member.');
+      console.error("Error adding member", error);
+      setErrorMsg("Failed to add member.");
       setSaving(false);
       return;
     }
@@ -122,27 +147,25 @@ export default function AdminGroupsPage() {
       ...prev,
       { group_id: selectedGroupId, user_id: selectedUserId },
     ]);
-    setSelectedUserId('');
+    setSelectedUserId("");
     setSaving(false);
   };
 
   const handleRemoveMember = async (groupId: string, userId: string) => {
     setSaving(true);
     const { error } = await supabase
-      .from('user_groups')
+      .from("user_groups")
       .delete()
       .match({ group_id: groupId, user_id: userId });
 
     if (error) {
-      console.error('Error removing member', error);
+      console.error("Error removing member", error);
       setSaving(false);
       return;
     }
 
     setMemberships((prev) =>
-      prev.filter(
-        (m) => !(m.group_id === groupId && m.user_id === userId)
-      )
+      prev.filter((m) => !(m.group_id === groupId && m.user_id === userId))
     );
     setSaving(false);
   };
@@ -166,9 +189,9 @@ export default function AdminGroupsPage() {
             </p>
             <h1 className="text-3xl font-bold">Groups</h1>
             <p className="text-sm text-slate-300">
-              Logged in as{' '}
+              Logged in as{" "}
               <span className="font-semibold">
-                {profile?.full_name || 'Admin'}
+                {profile?.full_name || "Admin"}
               </span>
               . Organize staff into teams like Front Desk, Nursing, or Billing.
             </p>
@@ -237,7 +260,7 @@ export default function AdminGroupsPage() {
               disabled={saving}
               className="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-md shadow-blue-600/30 hover:bg-blue-500 disabled:opacity-60"
             >
-              {saving ? 'Saving…' : 'Create group'}
+              {saving ? "Saving…" : "Create group"}
             </button>
           </form>
         </section>
@@ -255,9 +278,7 @@ export default function AdminGroupsPage() {
             className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end"
           >
             <div>
-              <label className="block text-xs mb-1 text-slate-200">
-                Group
-              </label>
+              <label className="block text-xs mb-1 text-slate-200">Group</label>
               <select
                 className="w-full rounded-xl border border-slate-700 bg-slate-950/70 text-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={selectedGroupId}
@@ -273,9 +294,7 @@ export default function AdminGroupsPage() {
             </div>
 
             <div>
-              <label className="block text-xs mb-1 text-slate-200">
-                User
-              </label>
+              <label className="block text-xs mb-1 text-slate-200">User</label>
               <select
                 className="w-full rounded-xl border border-slate-700 bg-slate-950/70 text-slate-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={selectedUserId}
@@ -284,8 +303,7 @@ export default function AdminGroupsPage() {
                 <option value="">Select user…</option>
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>
-                    {u.full_name || u.id}{' '}
-                    {u.role === 'admin' ? '(admin)' : ''}
+                    {u.full_name || u.id} {u.role === "admin" ? "(admin)" : ""}
                   </option>
                 ))}
               </select>
@@ -297,7 +315,7 @@ export default function AdminGroupsPage() {
                 disabled={saving}
                 className="w-full px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-md shadow-blue-600/30 hover:bg-blue-500 disabled:opacity-60"
               >
-                {saving ? 'Adding…' : 'Add to group'}
+                {saving ? "Adding…" : "Add to group"}
               </button>
             </div>
           </form>
@@ -305,9 +323,7 @@ export default function AdminGroupsPage() {
 
         {/* Group list with members */}
         <section className="bg-slate-900/70 border border-slate-800 rounded-3xl p-5 space-y-3">
-          <h2 className="text-xl font-semibold mb-1">
-            Groups &amp; members
-          </h2>
+          <h2 className="text-xl font-semibold mb-1">Groups &amp; members</h2>
           <p className="text-xs text-slate-400 mb-3">
             A quick overview of each team and who belongs to it. Removing a
             member does not delete their user or tasks—only the group link.
@@ -336,7 +352,7 @@ export default function AdminGroupsPage() {
                       </p>
                       <p className="text-[11px] text-slate-400">
                         {groupMembers.length} member
-                        {groupMembers.length === 1 ? '' : 's'}
+                        {groupMembers.length === 1 ? "" : "s"}
                       </p>
                     </div>
 
@@ -352,14 +368,21 @@ export default function AdminGroupsPage() {
                             key={member.id}
                             className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-full px-3 py-1"
                           >
+                            <span
+                              className={avatarClasses(
+                                member.full_name || member.id
+                              )}
+                            >
+                              {getInitials(member.full_name || member.id)}
+                            </span>
                             <span className="text-slate-100">
-                              {member.full_name || member.id}{' '}
-                              {member.role === 'admin' ? '(admin)' : ''}
+                              {member.full_name || member.id}{" "}
+                              {member.role === "admin" ? "(admin)" : ""}
                             </span>
                             <button
                               type="button"
                               disabled={saving}
-                              className="text-red-400 hover:text-red-300"
+                              className="text-red-400 hover:text-red-300 text-xs ml-1"
                               onClick={() =>
                                 handleRemoveMember(group.id, member.id)
                               }

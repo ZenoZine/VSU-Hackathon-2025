@@ -17,6 +17,28 @@ type Employee = {
   date_of_birth: string | null;
 };
 
+function getInitials(name?: string | null) {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function avatarClasses(seed?: string | null) {
+  const palette = [
+    "bg-blue-600",
+    "bg-emerald-600",
+    "bg-purple-600",
+    "bg-amber-600",
+    "bg-pink-600",
+  ];
+  const index =
+    seed && seed.length > 0 ? seed.charCodeAt(0) % palette.length : 0;
+  return `inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white ${palette[index]}`;
+}
+
 export default function AdminEmployeesPage() {
   const { profile, loading: profileLoading } = useCurrentUserProfile();
   const router = useRouter();
@@ -384,7 +406,12 @@ export default function AdminEmployeesPage() {
                         {emp.employee_code}
                       </td>
                       <td className="px-3 py-2 border-b border-slate-900">
-                        {emp.name}
+                        <div className="flex items-center gap-2">
+                          <span className={avatarClasses(emp.name)}>
+                            {getInitials(emp.name)}
+                          </span>
+                          <span>{emp.name}</span>
+                        </div>
                       </td>
                       <td className="px-3 py-2 border-b border-slate-900">
                         {emp.department || "—"}
