@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
-import { useCurrentUserProfile } from '@/lib/useCurrentUserProfile';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+import { useCurrentUserProfile } from "@/lib/useCurrentUserProfile";
 
 type Employee = {
   id: string;
@@ -25,34 +25,34 @@ export default function AdminEmployeesPage() {
   const [loading, setLoading] = useState(true);
 
   // form state
-  const [employeeCode, setEmployeeCode] = useState('');
-  const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [salary, setSalary] = useState('');
-  const [department, setDepartment] = useState('');
-  const [jobRole, setJobRole] = useState('');
-  const [dateOfHire, setDateOfHire] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [employeeCode, setEmployeeCode] = useState("");
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
+  const [salary, setSalary] = useState("");
+  const [department, setDepartment] = useState("");
+  const [jobRole, setJobRole] = useState("");
+  const [dateOfHire, setDateOfHire] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [saving, setSaving] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState("");
 
   // Guard + load employees
   useEffect(() => {
     if (profileLoading) return;
 
     if (!profile) {
-      router.replace('/login');
+      router.replace("/login");
       return;
     }
 
-    if (profile.role !== 'admin') {
-      router.replace('/me/tasks');
+    if (profile.role !== "admin") {
+      router.replace("/me/tasks");
       return;
     }
 
     const loadEmployees = async () => {
       const { data, error } = await supabase
-        .from('employees')
+        .from("employees")
         .select(
           `
           id,
@@ -66,10 +66,10 @@ export default function AdminEmployeesPage() {
           date_of_birth
         `
         )
-        .order('name', { ascending: true });
+        .order("name", { ascending: true });
 
       if (error) {
-        console.error('Error loading employees', error);
+        console.error("Error loading employees", error);
       } else if (data) {
         setEmployees(data as Employee[]);
       }
@@ -82,16 +82,16 @@ export default function AdminEmployeesPage() {
 
   const handleCreateEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
+    setErrorMsg("");
 
     if (!employeeCode.trim() || !name.trim()) {
-      setErrorMsg('Employee code and name are required.');
+      setErrorMsg("Employee code and name are required.");
       return;
     }
 
     setSaving(true);
 
-    const { error } = await supabase.from('employees').insert({
+    const { error } = await supabase.from("employees").insert({
       employee_code: employeeCode.trim(),
       name: name.trim(),
       address: address.trim() || null,
@@ -103,15 +103,15 @@ export default function AdminEmployeesPage() {
     });
 
     if (error) {
-      console.error('Error creating employee', error);
-      setErrorMsg('Failed to create employee.');
+      console.error("Error creating employee", error);
+      setErrorMsg("Failed to create employee.");
       setSaving(false);
       return;
     }
 
     // Reload employees
     const { data: dataAfter } = await supabase
-      .from('employees')
+      .from("employees")
       .select(
         `
         id,
@@ -125,21 +125,21 @@ export default function AdminEmployeesPage() {
         date_of_birth
       `
       )
-      .order('name', { ascending: true });
+      .order("name", { ascending: true });
 
     if (dataAfter) {
       setEmployees(dataAfter as Employee[]);
     }
 
     // Reset form
-    setEmployeeCode('');
-    setName('');
-    setAddress('');
-    setSalary('');
-    setDepartment('');
-    setJobRole('');
-    setDateOfHire('');
-    setDateOfBirth('');
+    setEmployeeCode("");
+    setName("");
+    setAddress("");
+    setSalary("");
+    setDepartment("");
+    setJobRole("");
+    setDateOfHire("");
+    setDateOfBirth("");
     setSaving(false);
   };
 
@@ -162,9 +162,9 @@ export default function AdminEmployeesPage() {
             </p>
             <h1 className="text-3xl font-bold">Employees</h1>
             <p className="text-sm text-slate-300">
-              Logged in as{' '}
+              Logged in as{" "}
               <span className="font-semibold">
-                {profile?.full_name || 'Admin'}
+                {profile?.full_name || "Admin"}
               </span>
               . Maintain staff records and key HR details.
             </p>
@@ -193,6 +193,12 @@ export default function AdminEmployeesPage() {
               className="rounded-full bg-slate-900/40 border border-slate-700 px-3 py-1 text-slate-300 hover:border-slate-500"
             >
               My Tasks
+            </a>
+            <a
+              href="/logout"
+              className="rounded-full bg-slate-900/40 border border-red-500/60 px-3 py-1 text-[11px] font-medium text-red-200 hover:bg-red-500/10"
+            >
+              Log out
             </a>
           </nav>
         </header>
@@ -235,9 +241,7 @@ export default function AdminEmployeesPage() {
             </div>
 
             <div className="md:col-span-1 lg:col-span-2">
-              <label className="block text-xs mb-1 text-slate-200">
-                Name
-              </label>
+              <label className="block text-xs mb-1 text-slate-200">Name</label>
               <input
                 className="w-full rounded-xl border border-slate-700 bg-slate-950/70 text-slate-50 px-3 py-2 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={name}
@@ -327,7 +331,7 @@ export default function AdminEmployeesPage() {
                 disabled={saving}
                 className="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-md shadow-blue-600/30 hover:bg-blue-500 disabled:opacity-60"
               >
-                {saving ? 'Saving…' : 'Create employee'}
+                {saving ? "Saving…" : "Create employee"}
               </button>
             </div>
           </form>
@@ -383,25 +387,25 @@ export default function AdminEmployeesPage() {
                         {emp.name}
                       </td>
                       <td className="px-3 py-2 border-b border-slate-900">
-                        {emp.department || '—'}
+                        {emp.department || "—"}
                       </td>
                       <td className="px-3 py-2 border-b border-slate-900">
-                        {emp.job_role || '—'}
+                        {emp.job_role || "—"}
                       </td>
                       <td className="px-3 py-2 border-b border-slate-900">
                         {emp.salary != null
                           ? `$${emp.salary.toLocaleString()}`
-                          : '—'}
+                          : "—"}
                       </td>
                       <td className="px-3 py-2 border-b border-slate-900">
                         {emp.date_of_hire
                           ? new Date(emp.date_of_hire).toLocaleDateString()
-                          : '—'}
+                          : "—"}
                       </td>
                       <td className="px-3 py-2 border-b border-slate-900">
                         {emp.date_of_birth
                           ? new Date(emp.date_of_birth).toLocaleDateString()
-                          : '—'}
+                          : "—"}
                       </td>
                     </tr>
                   ))}
